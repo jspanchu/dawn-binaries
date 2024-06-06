@@ -1,0 +1,73 @@
+// SPDX-FileCopyrightText: Copyright (c) Jaswant Sai Panchumarti
+// SPDX-License-Identifier: Apache-2.0
+
+#include "weld.h"
+
+#if defined(_WIN32)
+#include <windows.h>
+#define WELD_LOAD_LIBRARY(name) LoadLibrary(TEXT(name))
+#define WELD_UNLOAD_LIBRARY(lib) FreeLibrary(lib)
+#define WELD_LIBRARY_HANDLE_TYPE HINSTANCE
+#define WELD_DAWN_LIBRARY "DawnLoader/dawn_loader.dll"
+#define WELD_WGPUNATIVE_LIBRARY "wgpunative.dll"
+#define WELD_LOAD_SYMBOL(symbol, pSymbol)                                      \
+  do {                                                                         \
+    symbol = (pSymbol)GetProcAddress(webgpuImpl, #symbol);                     \
+    if (symbol == nullptr) {                                                   \
+      return WELD_FALSE;                                                       \
+    }                                                                          \
+  } while (0)
+#define WELD_LOAD_WGPU_SYMBOL(name) WELD_LOAD_SYMBOL(wgpu##name, WGPUProc##name)
+#else
+#include <dlfcn.h>
+#define WELD_LOAD_LIBRARY(name) dlopen(name, RTLD_LAZY)
+#define WELD_UNLOAD_LIBRARY(lib) dlclose(lib)
+#define WELD_LIBRARY_HANDLE_TYPE void *
+#define WELD_LOAD_SYMBOL(symbol, pSymbol)                                      \
+  do {                                                                         \
+    symbol = (pSymbol)dlsym(webgpuImpl, #symbol);                              \
+    if (symbol == nullptr) {                                                   \
+      return WELD_FALSE;                                                       \
+    }                                                                          \
+  } while (0)
+#define WELD_LOAD_WGPU_SYMBOL(name) WELD_LOAD_SYMBOL(wgpu##name, WGPUProc##name)
+#if defined(__APPLE__)
+#define WELD_DAWN_LIBRARY "libdawn_loader.dylib"
+#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.dylib"
+#else
+#define WELD_DAWN_LIBRARY "libdawn_loader.so"
+#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.so"
+#endif
+#endif
+
+namespace {
+WELD_LIBRARY_HANDLE_TYPE webgpuImpl = nullptr;
+typedef void (*dawnLoaderProc)(void);
+dawnLoaderProc initDawn;
+dawnLoaderProc finalizeDawn;
+} // namespace
+
+int weldInitialize() {
+#if defined(WELD_USE_DAWN_BACKEND)
+  webgpuImpl = WELD_LOAD_LIBRARY(WELD_DAWN_LIBRARY);
+#elif defined(WELD_USE_WGPUNATIVE_BACKEND)
+  webgpuImpl = WELD_LOAD_LIBRARY(WELD_WGPUNATIVE_LIBRARY);
+#endif
+  if (webgpuImpl == nullptr) {
+    return WELD_FALSE;
+  }
+  WELD_LOAD_SYMBOL(initDawn, dawnLoaderProc);
+  WELD_LOAD_SYMBOL(finalizeDawn, dawnLoaderProc);
+  initDawn();
+@WELD_LOAD_WGPU_SYMBOLS@
+
+  return WELD_TRUE;
+}
+
+void weldFinalize() {
+  finalizeDawn();
+  WELD_UNLOAD_LIBRARY(webgpuImpl);
+}
+
+#define WELD_INIT_SYMBOL(name) WGPUProc##name wgpu##name;
+@WELD_INIT_SYMBOLS@

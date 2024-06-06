@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.0...3.25)
+project(dawn-test)
+
+add_subdirectory("glfw-3.4.0-light/glfw")
+add_subdirectory("DawnLoader")
+add_subdirectory("weld")
+target_link_libraries(weld PUBLIC dawn_headers)
+
+add_executable(main main.cpp glfw3webgpu.cpp glfw3webgpu.h)
+target_link_libraries(main PRIVATE weld dawn_loader glfw)
+target_compile_features(main PRIVATE cxx_std_11)
+if (APPLE)
+  target_compile_options(main PRIVATE -x objective-c++)
+  target_link_libraries(main PRIVATE "-framework Cocoa" "-framework Metal" "-framework CoreVideo" "-framework IOKit" "-framework QuartzCore")
+endif ()

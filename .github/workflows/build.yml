@@ -1,0 +1,150 @@
+# name: Build and Test
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   build:
+#     env:
+#       DEPOT_TOOLS_GIT_URL: https://chromium.googlesource.com/chromium/tools/depot_tools.git
+#       DEPOT_TOOLS_ZIP_URL: https://storage.googleapis.com/chrome-infra/depot_tools.zip
+#       DAWN_GIT_URL: https://dawn.googlesource.com/dawn
+#       DAWN_GIT_TAG: chromium/6524
+  
+#     name: Build
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       matrix:
+#         os: [ubuntu-latest, macos-latest]
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4
+
+#       - name: Set up dependencies on linux
+#         if: matrix.os == 'ubuntu-latest'
+#         run: |
+#           sudo apt-get update
+#           sudo apt-get install -y ninja-build patchelf xcb libxcb-xkb-dev x11-xkb-utils libx11-xcb-dev libxkbcommon-x11-dev
+
+#       - name: Set up dependencies on macos
+#         if: matrix.os == 'macos-latest'
+#         run: brew install ninja
+
+#       - name: Setup depot_tools
+#         run: |
+#           git clone ${DEPOT_TOOLS_GIT_URL}
+#           echo $PWD
+
+#       - name: Clone dawn repository
+#         run: git clone ${DAWN_GIT_URL} -b ${DAWN_GIT_TAG} dawn
+
+#       - name: Sync dawn dependencies
+#         run: |
+#           export PATH=$PWD/depot_tools:$PATH
+#           cd dawn
+#           cp scripts/standalone.gclient .gclient
+#           gclient sync
+
+#       - name: Configure dawn (cmake)
+#         run: |
+#           cd dawn
+#           cmake \
+#             -S . \
+#             -B out/Release \
+#             -GNinja \
+#             -DCMAKE_BUILD_TYPE=Release \
+#             -DBUILD_SHARED_LIBS=ON \
+#             -DTINT_BUILD_TESTS=OFF \
+#             -DTINT_BUILD_CMD_TOOLS=OFF \
+#             -DDAWN_BUILD_SAMPLES=OFF \
+#             -DDAWN_USE_GLFW=OFF \
+#             -DCMAKE_SKIP_RPATH=ON
+
+#       - name: Configure dawn (gn)
+#         run: |
+#           export PATH=$PWD/depot_tools:$PATH
+#           cd dawn
+#           gn gen out/Release 
+
+#       - name: Build dawn (CMake)
+#         run: |
+#           cd dawn/out/Release
+#           ninja webgpu_dawn
+
+#       - name: Build dawn (ninja)
+#         run: |
+#           cd dawn/out/Release
+#           ninja
+
+#       - name: Package dawn headers
+#         run: |
+#           mkdir package
+#           cd dawn
+#           git describe --all > ../package/commit-sha
+#           cd ..
+#           cp dawn/out/Release/gen/include/dawn/webgpu.h package/webgpu.h
+
+#       - name: Package dawn shared libraries for linux
+#         if: matrix.os == 'ubuntu-latest'
+#         run: |
+#           find dawn/out/Release -type f -name "*.so" -exec cp -v -- "{}"  package \;
+#           find package -type f -name "*.so" -exec patchelf --set-rpath "$ORIGIN/" {} \;
+
+#       - name: Package dawn shared libraries for macos
+#         if: matrix.os == 'macos-latest'
+#         run: |
+#           find dawn/out/Release -type f -name "*.dylib" -exec cp -v -- "{}"  package \;
+#           find package -type f -name "*.dylib" -exec install_name_tool -add_rpath "@loader_path/" {} \;
+
+#       - name: Upload artifacts
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: package
+#           path: package
+
+#   test:
+#     name: Test
+#     runs-on: ${{ matrix.os }}
+#     needs: build
+#     strategy:
+#       matrix:
+#         os: [ubuntu-latest, macos-latest]
+#     steps:
+#       - name: Checkout Repository
+#         uses: actions/checkout@v4
+
+#       - name: Download artifacts
+#         uses: actions/download-artifact@v4
+
+#       - name: Compile simple C++ webgpu program
+#         run: c++ -std=c++11 -g -O0 ./main.cpp -o webgpu_dawn_simple
+
+#       - name: Run simple C++ webgpu program
+#         run: |
+#           ulimit -c unlimited
+#           mkdir test-results
+#           ./webgpu_dawn_simple > test-results/test.log 2>&1
+
+#       - name: Save core dumps
+#         if: failure()
+#         run: |
+#           mkdir -p core-dumps
+#           cp core.* core-dumps
+
+#       - name: Upload core dumps
+#         if: failure()
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: core-dumps
+#           path: core-dumps
+
+#       - name: Upload test results
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: test-results
+#           path: test-results

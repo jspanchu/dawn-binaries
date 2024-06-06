@@ -1,0 +1,5 @@
+get_filename_component(weld_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+if(NOT TARGET weld::weld)
+  include("${weld_CMAKE_DIR}/weldTargets.cmake")
+endif()

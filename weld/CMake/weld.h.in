@@ -1,0 +1,42 @@
+// SPDX-FileCopyrightText: Copyright (c) Jaswant Sai Panchumarti
+// SPDX-License-Identifier: Apache-2.0
+
+#ifndef WELD_H
+#define WELD_H
+
+#define WELD_USE_DAWN_BACKEND
+// #define WELD_USE_WGPUNATIVE_BACKEND
+
+#if defined(WEBGPU_H_) && !defined(WGPU_SKIP_DECLARATIONS)
+#	error To use weld, you need to define WGPU_SKIP_DECLARATIONS before including webgpu.h
+#endif
+
+#if !defined(WGPU_SKIP_DECLARATIONS)
+#define WGPU_SKIP_DECLARATIONS
+#endif
+
+#if !defined(WEBGPU_H_)
+#include "webgpu/webgpu.h" // IWYU pragma: keep
+#endif
+
+constexpr int WELD_FALSE = 0;
+constexpr int WELD_TRUE = 1;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+int weldInitialize();
+
+void weldFinalize();
+
+#define WELD_DECLARE_SYMBOL(name) extern WGPUProc##name wgpu##name;
+
+@WELD_DECLARE_SYMBOLS@
+
+#undef WELD_DECLARE_SYMBOL
+
+#if defined(__cplusplus)
+}
+#endif
+#endif
