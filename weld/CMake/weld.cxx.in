@@ -23,6 +23,12 @@
 #define WELD_LOAD_LIBRARY(name) dlopen(name, RTLD_LAZY)
 #define WELD_UNLOAD_LIBRARY(lib) dlclose(lib)
 #define WELD_LIBRARY_HANDLE_TYPE void *
+#if defined(__APPLE__)
+#define WELD_DAWN_LIBRARY "libdawn_loader.dylib"
+#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.dylib"
+#else
+#define WELD_DAWN_LIBRARY "libdawn_loader.so"
+#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.so"
 #define WELD_LOAD_SYMBOL(symbol, pSymbol)                                      \
   do {                                                                         \
     symbol = (pSymbol)dlsym(webgpuImpl, #symbol);                              \
@@ -31,12 +37,6 @@
     }                                                                          \
   } while (0)
 #define WELD_LOAD_WGPU_SYMBOL(name) WELD_LOAD_SYMBOL(wgpu##name, WGPUProc##name)
-#if defined(__APPLE__)
-#define WELD_DAWN_LIBRARY "libdawn_loader.dylib"
-#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.dylib"
-#else
-#define WELD_DAWN_LIBRARY "libdawn_loader.so"
-#define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.so"
 #endif
 #endif
 

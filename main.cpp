@@ -5,6 +5,7 @@
 #include "GLFW/glfw3.h"
 #include "glfw3webgpu.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <iostream>
 #include <vector>
@@ -38,6 +39,8 @@ WGPUAdapter requestAdapterSync(WGPUInstance instance,
   wgpuInstanceRequestAdapter(instance /* equivalent of navigator.gpu */,
                              options, onAdapterRequestEnded, (void *)&userData);
 
+  assert(userData.requestEnded);
+
   return userData.adapter;
 }
 /**
@@ -69,6 +72,8 @@ WGPUDevice requestDeviceSync(WGPUAdapter adapter,
 
   wgpuAdapterRequestDevice(adapter, descriptor, onDeviceRequestEnded,
                            (void *)&userData);
+
+  assert(userData.requestEnded);
 
   return userData.device;
 }
