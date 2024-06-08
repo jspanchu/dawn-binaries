@@ -8,7 +8,7 @@ if (CMAKE_HOST_WIN32)
   # Download depot_tools.zip
   file(DOWNLOAD
     "${depot_tools_zipurl}/${depot_tools_file}"
-    "${depot_tools_file}"
+    "${CMAKE_CURRENT_LIST_DIR}/${depot_tools_file}"
     STATUS download_status)
   # Check the download status.
   list(GET download_status 0 res)
@@ -21,8 +21,19 @@ if (CMAKE_HOST_WIN32)
   execute_process(
     COMMAND
       "${CMAKE_COMMAND}"
-      -E tar
-      xf "${depot_tools_file}"
+      -E rm
+      -rf "${CMAKE_CURRENT_LIST_DIR}/depot_tools")
+  execute_process(
+    COMMAND
+      "${CMAKE_COMMAND}"
+      -E make_directory
+      "${CMAKE_CURRENT_LIST_DIR}/depot_tools")
+  execute_process(
+    COMMAND
+      "${CMAKE_COMMAND}"
+      -E chdir "${CMAKE_CURRENT_LIST_DIR}/depot_tools" tar
+      -xf "${CMAKE_CURRENT_LIST_DIR}/${depot_tools_file}"
+    COMMAND_ECHO STDOUT
     WORKING_DIRECTORY "."
     RESULT_VARIABLE res
     ERROR_VARIABLE err
@@ -38,7 +49,12 @@ else ()
   endif()
   execute_process(
     COMMAND
-      "${GIT_EXECUTABLE}" "clone" "${depot_tools_giturl}"
+      "${CMAKE_COMMAND}"
+      -E rm
+      -rf "${CMAKE_CURRENT_LIST_DIR}/depot_tools")
+  execute_process(
+    COMMAND
+      "${GIT_EXECUTABLE}" "clone" "${depot_tools_giturl}" "${CMAKE_CURRENT_LIST_DIR}/depot_tools"
     WORKING_DIRECTORY "."
     COMMAND_ECHO STDOUT
     RESULT_VARIABLE res

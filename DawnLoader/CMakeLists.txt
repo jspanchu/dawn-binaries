@@ -2,21 +2,23 @@ cmake_minimum_required(VERSION 3.0...3.25)
 project(DawnLoader)
 
 include(FetchContent)
-include(GenerateExportHeader)
-
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
 FetchContent_Declare(dawn
-    GIT_REPOSITORY https://dawn.googlesource.com/dawn
-    GIT_TAG chromium/6524
-    GIT_SUBMODULES ""
-    GIT_SHALLOW TRUE
-    EXCLUDE_FROM_ALL)
+  GIT_REPOSITORY https://dawn.googlesource.com/dawn
+  GIT_TAG        chromium/6526
+  GIT_SUBMODULES ""
+  GIT_SHALLOW    ON
+  PATCH_COMMAND
+    "${CMAKE_COMMAND}"
+      -E copy "scripts/standalone.gclient" ".gclient" &&
+    "${CMAKE_COMMAND}"
+      -V
+      -P
+      "${CMAKE_CURRENT_LIST_DIR}/GclientSync.cmake"
+      "-DGCLIENT_SYNC_TARGET_SOURCE_DIR=${FETCHCONTENT_BASE_DIR}/dawn-src")
 
-set(DAWN_FETCH_DEPENDENCIES ON)
+set(DAWN_FETCH_DEPENDENCIES OFF)
 set(DAWN_BUILD_SAMPLES OFF)
-set(DAWN_ENABLE_DESKTOP_GL OFF)
-set(DAWN_ENABLE_OPENGLES OFF)
 set(DAWN_USE_GLFW OFF)
 
 set(TINT_BUILD_CMD_TOOLS OFF)
