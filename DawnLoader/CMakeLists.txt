@@ -25,10 +25,12 @@ set(TINT_BUILD_TESTS OFF)
 FetchContent_MakeAvailable(dawn)
 
 add_library(dawn SHARED "${dawn_BINARY_DIR}/gen/src/dawn/native/webgpu_dawn_native_proc.cpp")
+# 'nested-namespace-definition' requires compiler flag '/std:c++17'
+target_compile_features(dawn PRIVATE cxx_std_17)
 target_link_libraries(dawn
   PRIVATE dawn_native
   PUBLIC dawn_headers)
 target_compile_definitions(dawn
-  INTERFACE "WGPU_SHARED_LIBRARY")
+  PUBLIC "WGPU_SHARED_LIBRARY")
 target_compile_definitions(dawn
   PRIVATE "WGPU_IMPLEMENTATION")
