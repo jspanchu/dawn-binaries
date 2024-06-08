@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.0...3.25)
-project(DawnLoader)
+cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+project(LoadableDawn)
 
 include(FetchContent)
 
@@ -17,14 +17,25 @@ FetchContent_Declare(dawn
       "${CMAKE_CURRENT_LIST_DIR}/GclientSync.cmake"
       "-DGCLIENT_SYNC_TARGET_SOURCE_DIR=${FETCHCONTENT_BASE_DIR}/dawn-src")
 
-set(DAWN_FETCH_DEPENDENCIES OFF)
-set(DAWN_BUILD_SAMPLES OFF)
-set(DAWN_ENABLE_DESKTOP_OPENGL OFF)
-set(DAWN_ENABLE_OPENGLES OFF)
-set(DAWN_USE_GLFW OFF)
+FetchContent_GetProperties(dawn)
+if (NOT dawn_POPULATED)
+  FetchContent_Populate(dawn)
+  # A more minimalistic choice of backand than Dawn's default
+  set(DAWN_ENABLE_NULL OFF)
+  set(DAWN_ENABLE_DESKTOP_GL OFF)
+  set(DAWN_ENABLE_OPENGLES OFF)
+  set(TINT_BUILD_SPV_READER OFF)
 
-set(TINT_BUILD_CMD_TOOLS OFF)
-set(TINT_BUILD_TESTS OFF)
+  # Disable unneeded parts
+  set(DAWN_BUILD_SAMPLES OFF)
+  set(DAWN_FETCH_DEPENDENCIES OFF)
+  set(TINT_BUILD_CMD_TOOLS OFF)
+  set(TINT_BUILD_SAMPLES OFF)
+  set(TINT_BUILD_DOCS OFF)
+  set(TINT_BUILD_TESTS OFF)
+
+  add_subdirectory(${dawn_SOURCE_DIR} ${dawn_BINARY_DIR})
+endif ()
 
 FetchContent_MakeAvailable(dawn)
 
@@ -38,3 +49,11 @@ target_compile_definitions(dawn
   PUBLIC "WGPU_SHARED_LIBRARY")
 target_compile_definitions(dawn
   PRIVATE "WGPU_IMPLEMENTATION")
+
+include(CTest)
+set(BUILD_TESTING ON)
+if (BUILD_TESTING)
+  add_executable(simple_test tests/test.cpp)
+  target_link_libraries(simple_test PRIVATE dawn_headers) # for webgpu/webgpu.h
+  add_test(simple-test $<TARGET_FILE:simple_test>)
+endif ()

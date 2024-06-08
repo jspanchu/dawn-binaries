@@ -42,9 +42,6 @@
 
 namespace {
 WELD_LIBRARY_HANDLE_TYPE webgpuImpl = nullptr;
-typedef void (*dawnLoaderProc)(void);
-dawnLoaderProc initDawn;
-dawnLoaderProc finalizeDawn;
 } // namespace
 
 int weldInitialize() {
