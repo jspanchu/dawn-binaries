@@ -7,7 +7,7 @@ add_subdirectory("weld")
 target_link_libraries(weld PUBLIC dawn_headers)
 
 add_executable(main main.cpp glfw3webgpu.cpp glfw3webgpu.h)
-target_link_libraries(main PRIVATE weld dawn_loader glfw)
+target_link_libraries(main PRIVATE weld glfw)
 target_compile_features(main PRIVATE cxx_std_11)
 if (APPLE)
   target_compile_options(main PRIVATE -x objective-c++)

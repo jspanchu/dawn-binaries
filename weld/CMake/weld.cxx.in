@@ -8,7 +8,7 @@
 #define WELD_LOAD_LIBRARY(name) LoadLibrary(TEXT(name))
 #define WELD_UNLOAD_LIBRARY(lib) FreeLibrary(lib)
 #define WELD_LIBRARY_HANDLE_TYPE HINSTANCE
-#define WELD_DAWN_LIBRARY "DawnLoader/dawn_loader.dll"
+#define WELD_DAWN_LIBRARY "DawnLoader/dawn.dll"
 #define WELD_WGPUNATIVE_LIBRARY "wgpunative.dll"
 #define WELD_LOAD_SYMBOL(symbol, pSymbol)                                      \
   do {                                                                         \
@@ -24,10 +24,10 @@
 #define WELD_UNLOAD_LIBRARY(lib) dlclose(lib)
 #define WELD_LIBRARY_HANDLE_TYPE void *
 #if defined(__APPLE__)
-#define WELD_DAWN_LIBRARY "libdawn_loader.dylib"
+#define WELD_DAWN_LIBRARY "libdawn.dylib"
 #define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.dylib"
 #else
-#define WELD_DAWN_LIBRARY "libdawn_loader.so"
+#define WELD_DAWN_LIBRARY "libdawn.so"
 #define WELD_WGPUNATIVE_LIBRARY "libwgpu_native.so"
 #define WELD_LOAD_SYMBOL(symbol, pSymbol)                                      \
   do {                                                                         \
@@ -56,16 +56,12 @@ int weldInitialize() {
   if (webgpuImpl == nullptr) {
     return WELD_FALSE;
   }
-  WELD_LOAD_SYMBOL(initDawn, dawnLoaderProc);
-  WELD_LOAD_SYMBOL(finalizeDawn, dawnLoaderProc);
-  initDawn();
 @WELD_LOAD_WGPU_SYMBOLS@
 
   return WELD_TRUE;
 }
 
 void weldFinalize() {
-  finalizeDawn();
   WELD_UNLOAD_LIBRARY(webgpuImpl);
 }
 

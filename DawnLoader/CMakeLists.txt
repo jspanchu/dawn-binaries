@@ -24,19 +24,11 @@ set(TINT_BUILD_TESTS OFF)
 
 FetchContent_MakeAvailable(dawn)
 
-add_library(dawn_interface INTERFACE)
-target_link_libraries(dawn_interface INTERFACE dawn_proc dawn_common dawn_headers webgpu_dawn)
-
-add_library(dawn_loader SHARED dawn_loader.cxx "${dawn_BINARY_DIR}/gen/src/dawn/dawn_proc.cpp")
-generate_export_header(dawn_loader
-  EXPORT_MACRO_NAME DAWN_LOADER_EXPORT
-  EXPORT_FILE_NAME "${CMAKE_CURRENT_BINARY_DIR}/dawn_loader_export.h")
-target_compile_features(dawn_loader PRIVATE cxx_std_17)
-target_link_libraries(dawn_loader PRIVATE dawn_interface)
-target_compile_definitions(dawn_loader PRIVATE "WGPU_SHARED_LIBRARY" "WGPU_IMPLEMENTATION")
-target_include_directories(dawn_loader
-  PRIVATE
-    # needed because dawn_proc.cpp includes dawn/common/Compiler.h which is directly used as a source file in the dawn_common target
-    "${dawn_SOURCE_DIR}/src"
-    # For dawn_loader_export.h
-    "${CMAKE_CURRENT_BINARY_DIR}")
+add_library(dawn SHARED "${dawn_BINARY_DIR}/gen/src/dawn/native/webgpu_dawn_native_proc.cpp")
+target_link_libraries(dawn
+  PRIVATE dawn_native
+  PUBLIC dawn_headers)
+target_compile_definitions(dawn
+  INTERFACE "WGPU_SHARED_LIBRARY")
+target_compile_definitions(dawn
+  PRIVATE "WGPU_IMPLEMENTATION")
